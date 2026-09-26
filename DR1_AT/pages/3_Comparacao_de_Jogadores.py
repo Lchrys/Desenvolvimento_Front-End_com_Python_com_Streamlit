@@ -51,14 +51,25 @@ resumo = resumo_com_progresso(eventos_metricas)
 col_a, col_b = st.columns(2)
 with col_a:
     st.markdown(f"### {jogador_a}")
-    mostrar_metricas_jogador(estatisticas_jogador(eventos_metricas, jogador_a), jogador_a)
+    mostrar_metricas_jogador(
+        estatisticas_jogador(eventos_metricas, jogador_a),
+        jogador_a,
+        legenda=False,
+        colunas=2,
+    )
 with col_b:
     st.markdown(f"### {jogador_b}")
     mostrar_metricas_jogador(
         estatisticas_jogador(eventos_metricas, jogador_b),
         jogador_b,
         avisar=False,
+        legenda=False,
+        colunas=2,
     )
+st.caption(
+    "A faixa colorida segue a precisão de passe: verde a partir de 85%, "
+    "amarelo a partir de 75% e vermelho abaixo disso."
+)
 
 aba1, aba2 = st.tabs(["Barras absolutas", "Passes lado a lado"])
 with aba1:

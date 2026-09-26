@@ -122,30 +122,35 @@ def mostrar_metricas_partida(stats):
     )
     st.caption(
         "A faixa colorida segue a conversão: verde a partir de 20%, amarelo a "
-        "partir de 10% e vermelho abaixo disso. O delta de Gols compara esses "
-        "gols de chute com o xG. Gol contra não entra no cartão."
+        "partir de 10% e vermelho abaixo disso."
     )
 
 
-def mostrar_metricas_jogador(stats, jogador, avisar=True):
+def mostrar_metricas_jogador(stats, jogador, avisar=True, legenda=True, colunas=4):
     st.caption(f"Indicadores de {jogador}")
     if avisar:
         _aviso_recorte_metricas()
     saldo_xg = stats["gols"] - stats["xg"]
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.metric(
+    cartoes = [
+        (
             "Passes certos",
             stats["passes_completos"],
-            delta=f"{stats['precisao_passe']:.1f}% precisão",
-            delta_color="normal",
-        )
-    with c2:
-        st.metric("Finalizações", stats["chutes"], delta_color="off")
-    with c3:
-        st.metric("xG", f"{stats['xg']:.2f}", delta=f"{saldo_xg:+.2f} vs gols", delta_color="normal")
-    with c4:
-        st.metric("Conversão", f"{stats['conversao']:.1f}%", delta_color="off")
+            f"{stats['precisao_passe']:.1f}% precisão",
+            "normal",
+        ),
+        ("Finalizações", stats["chutes"], None, "off"),
+        ("xG", f"{stats['xg']:.2f}", f"{saldo_xg:+.2f} vs gols", "normal"),
+        ("Conversão", f"{stats['conversao']:.1f}%", None, "off"),
+    ]
+    n_col = 2 if colunas == 2 else 4
+    for inicio in range(0, len(cartoes), n_col):
+        cols = st.columns(n_col)
+        for col, (rotulo, valor, delta, delta_color) in zip(cols, cartoes[inicio : inicio + n_col]):
+            with col:
+                if delta is None:
+                    st.metric(rotulo, valor, delta_color=delta_color)
+                else:
+                    st.metric(rotulo, valor, delta=delta, delta_color=delta_color)
 
     style_metric_cards(
         background_color="var(--st-secondary-background-color)",
@@ -153,10 +158,11 @@ def mostrar_metricas_jogador(stats, jogador, avisar=True):
         border_left_color=_realce(stats["precisao_passe"], 85, 75),
         border_radius_px=8,
     )
-    st.caption(
-        "A faixa colorida segue a precisão de passe: verde a partir de 85%, "
-        "amarelo a partir de 75% e vermelho abaixo disso."
-    )
+    if legenda:
+        st.caption(
+            "A faixa colorida segue a precisão de passe: verde a partir de 85%, "
+            "amarelo a partir de 75% e vermelho abaixo disso."
+        )
 
 
 def mostrar_sidebar():
@@ -258,6 +264,14 @@ def glossario_metricas():
         Os desarmes somam duelos, interceptações e recuperações de bola.
         """,
     )
+    with st.expander("Como os cartões são calculados"):
+        st.latex(r"\text{conversao} = \frac{\text{gols}}{\text{chutes}} \times 100")
+        st.caption("Conversão do cartão: gols de chute sobre o total de finalizações.")
+        st.code(
+            "passe_completo = (type == 'Pass') and pass_outcome is vazio",
+            language="python",
+        )
+        st.caption("Regra dos passes certos: Pass sem pass_outcome conta como completo.")
 
 
 def resumo_com_progresso(eventos, rotulo="Calculando indicadores por jogador..."):

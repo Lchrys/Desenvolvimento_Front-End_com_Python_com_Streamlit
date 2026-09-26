@@ -5,14 +5,12 @@
 
 import streamlit as st
 
-from src.dados import estatisticas_partida, filtrar_eventos
+from src.dados import filtrar_eventos
 from src.interface import (
     cabecalho_partida,
     configurar_pagina,
-    glossario_metricas,
     metadados_partida,
     mostrar_mapa_paises,
-    mostrar_metricas_partida,
     mostrar_sidebar,
     resumo_com_progresso,
 )
@@ -40,6 +38,8 @@ with st.container():
         "seja, o indicador da partida soma esses valores e permite confrontar o "
         "que o recorte tendia a marcar com o que de fato ocorreu."
     )
+
+with st.expander("Por que Streamlit"):
     st.markdown(
         """
         O Streamlit, utilizado neste projeto, transforma um script Python em uma
@@ -77,32 +77,13 @@ with st.container():
         """
     )
 
-with st.expander("Como ler o dashboard"):
-    st.write(
-        """
-        A Visão da partida reúne as métricas, a tabela de eventos e os mapas de
-        passe, chute e calor. A Análise do jogador recorta um atleta e a
-        Comparação coloca dois jogadores lado a lado, nos indicadores e nos
-        mapas de passe. Ou seja, as três telas compartilham o recorte da barra
-        lateral, com os campos desenhados em mplsoccer e os demais gráficos em
-        Seaborn, Altair e Plotly.
-        """
-    )
-    st.latex(r"\text{conversao} = \frac{\text{gols}}{\text{chutes}} \times 100")
-    st.caption(
-        "A conversão de finalizações é o quociente entre gols e chutes, "
-        "multiplicado por 100, ou seja, a fração de chutes que se converte em gol no recorte."
-    )
-    st.code(
-        "eventos = sb.events(match_id=int(match_id))",
-        language="python",
-    )
-
 ctx = mostrar_sidebar()
+partida = ctx["partida"]
+f"{partida['home_team']} × {partida['away_team']} | {st.session_state['equipe_filtro']} | {st.session_state['jogador_filtro']}"
 
 st.divider()
 cabecalho_partida(ctx)
-with st.expander("Metadados da partida"):
+with st.expander("Ficha da partida (JSON)"):
     st.json(metadados_partida(ctx))
 
 eventos_metricas = filtrar_eventos(
@@ -115,11 +96,6 @@ eventos_metricas = filtrar_eventos(
     so_completos=st.session_state["so_completos"],
     so_gols=st.session_state["so_gols"],
 )
-
-stats = estatisticas_partida(eventos_metricas)
-mostrar_metricas_partida(stats)
-"Conversão desta partida:", f"{stats['conversao']:.1f}%"
-glossario_metricas()
 
 resumo = resumo_com_progresso(eventos_metricas)
 if len(resumo) > 0:
@@ -159,8 +135,26 @@ with col_b:
             key="scatter_placar_plotly",
         )
         if len(evento.selection.points) > 0:
-            escolhido = evento.selection.points[0]
-            st.info(f"Mandante {escolhido.get('x')} × visitante {escolhido.get('y')}.")
+            ponto = evento.selection.points[0]
+            rotulo = ponto.get("hovertext") or ponto.get("hover_name")
+            if not rotulo:
+                indice = ponto.get("point_index")
+                if indice is not None and int(indice) < len(ctx["partidas"]):
+                    rotulo = ctx["partidas"].iloc[int(indice)]["rotulo"]
+                else:
+                    casa = ponto.get("x")
+                    fora = ponto.get("y")
+                    mesmo_placar = ctx["partidas"][
+                        (ctx["partidas"]["home_score"] == casa)
+                        & (ctx["partidas"]["away_score"] == fora)
+                    ]
+                    if len(mesmo_placar) > 0:
+                        rotulo = mesmo_placar.iloc[0]["rotulo"]
+            if rotulo:
+                st.info(str(rotulo))
+                if rotulo != st.session_state.get("rotulo_partida"):
+                    st.session_state["rotulo_partida"] = rotulo
+                    st.rerun()
 
 colunas_tab = [
     c
@@ -168,6 +162,10 @@ colunas_tab = [
     if c in ctx["partidas"].columns
 ]
 if len(ctx["partidas"]) > 0:
-    st.table(ctx["partidas"][colunas_tab].head(5))
+    mais_gols = ctx["partidas"].copy()
+    mais_gols["gols_total"] = mais_gols["home_score"] + mais_gols["away_score"]
+    mais_gols = mais_gols.sort_values("gols_total", ascending=False)
+    st.caption("As cinco partidas com mais gols na temporada")
+    st.table(mais_gols[colunas_tab].head(5))
 
 mostrar_mapa_paises(ctx["partidas"])

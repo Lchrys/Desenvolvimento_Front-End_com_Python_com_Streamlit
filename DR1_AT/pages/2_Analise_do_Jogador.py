@@ -33,21 +33,24 @@ if not nomes:
     st.warning("Não há jogadores nos eventos desta partida.")
     st.stop()
 
-if st.session_state.get("jogador_analise") not in nomes:
-    st.session_state["jogador_analise"] = nomes[0]
+atual = st.session_state.get("jogador_filtro")
+if atual not in nomes:
+    atual = nomes[0]
 
 with st.form("form_jogador"):
     escolhido = st.selectbox(
         "Selecione o jogador",
         nomes,
-        index=nomes.index(st.session_state["jogador_analise"]),
+        index=nomes.index(atual),
     )
     aplicar = st.form_submit_button("Aplicar filtro do jogador")
 
 if aplicar:
-    st.session_state["jogador_analise"] = escolhido
+    st.session_state["jogador_filtro"] = escolhido
 
-jogador = st.session_state["jogador_analise"]
+jogador = st.session_state["jogador_filtro"]
+if jogador not in nomes:
+    jogador = nomes[0]
 
 filtros_comuns = dict(
     jogador=jogador,

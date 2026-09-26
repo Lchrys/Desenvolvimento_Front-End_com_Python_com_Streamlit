@@ -308,7 +308,7 @@ def subplots_passes_xg(resumo, n=8):
     fig.update_layout(
         template="plotly_dark",
         showlegend=False,
-        title="Confronto de indicadores (subplots Plotly)",
+        title="Passes e xG dos que mais passaram",
         height=380,
     )
     fig.update_xaxes(tickangle=-35)

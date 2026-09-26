@@ -14,6 +14,7 @@ from src.interface import (
     cabecalho_partida,
     configurar_pagina,
     formulario_eventos,
+    glossario_metricas,
     mostrar_figura,
     mostrar_metricas_partida,
     mostrar_sidebar,
@@ -59,6 +60,7 @@ eventos_metricas = filtrar_eventos(ctx["eventos"], tipos=None, **filtros_comuns)
 eventos = filtrar_eventos(ctx["eventos"], tipos=st.session_state["tipos_evento"], **filtros_comuns)
 
 mostrar_metricas_partida(estatisticas_partida(eventos_metricas))
+glossario_metricas()
 st.caption(
     "Os indicadores acima consideram todo o recorte de equipe, jogador e minuto, "
     "independentemente dos tipos de evento escolhidos no formulário. "
@@ -73,8 +75,16 @@ st.caption(
 tabela = eventos_para_exibicao(eventos, st.session_state["n_eventos"], st.session_state.get("ordem_tabela", "Minuto (cronológico)"))
 st.dataframe(tabela, width="stretch")
 if len(tabela) > 0:
-    colunas_resumo = [c for c in ["minute", "team", "player", "tipo"] if c in tabela.columns]
-    st.table(tabela[colunas_resumo].head(8))
+    if "gol" in tabela.columns and tabela["gol"].any():
+        destaque = tabela[tabela["gol"]].head(8)
+        st.caption("Gols do recorte")
+    elif "shot_statsbomb_xg" in tabela.columns:
+        destaque = tabela.sort_values("shot_statsbomb_xg", ascending=False).head(8)
+        st.caption("Maiores xG do recorte (não houve gol neste filtro)")
+    else:
+        destaque = tabela.head(8)
+        st.caption("Primeiros eventos do recorte")
+    st.table(destaque)
 botao_download(
     eventos_para_exibicao(eventos, limite=None, ordem=st.session_state.get("ordem_tabela", "Minuto (cronológico)")),
     ctx["match_id"],
@@ -100,19 +110,21 @@ with aba3:
 
 with aba4:
     resumo = resumo_com_progresso(eventos_metricas)
-    c1, c2 = st.columns(2)
-    with c1:
-        mostrar_figura(scatter_passes_xg(resumo))
-    with c2:
-        box_altair = boxplot_altair(resumo)
-        if box_altair is not None:
-            st.altair_chart(box_altair, width="stretch", key="boxplot_passes")
-    fig_pizza = pizza_eventos(eventos)
-    if fig_pizza is not None:
-        st.plotly_chart(fig_pizza, width="stretch")
-    fig_linha = linha_eventos_plotly(eventos)
-    if fig_linha is not None:
-        st.plotly_chart(fig_linha, width="stretch")
+    st.caption("Volume de passes em relação ao xG de cada jogador.")
+    mostrar_figura(scatter_passes_xg(resumo))
     fig_sub = subplots_passes_xg(resumo)
     if fig_sub is not None:
+        st.caption("Quem mais passou versus o xG desses mesmos jogadores.")
         st.plotly_chart(fig_sub, width="stretch")
+    box_altair = boxplot_altair(resumo)
+    if box_altair is not None:
+        st.caption("Como os passes se distribuem em cada equipe.")
+        st.altair_chart(box_altair, width="stretch", key="boxplot_passes")
+    fig_linha = linha_eventos_plotly(eventos)
+    if fig_linha is not None:
+        st.caption("Em quais minutos o recorte gerou mais ações.")
+        st.plotly_chart(fig_linha, width="stretch")
+    fig_pizza = pizza_eventos(eventos)
+    if fig_pizza is not None:
+        st.caption("Composição dos tipos de evento no filtro atual.")
+        st.plotly_chart(fig_pizza, width="stretch")
