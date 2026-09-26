@@ -4,6 +4,8 @@ Dashboard que investiga **quem constrói o ataque em uma partida**: quem mais
 influencia o jogo pelo volume e pela qualidade dos passes e pela eficiência
 das finalizações (chutes, gols e xG).
 
+#### **Link da aplicação no** [Streamlit Cloud](https://lchrys-desenvolvimento-front-end-com-python-co-dr1-atapp-scedyp.streamlit.app/)
+
 Os dados vêm do [StatsBomb Open Data](https://github.com/statsbomb/open-data).
 Os campos são desenhados com
 [mplsoccer](https://mplsoccer.readthedocs.io/en/latest/gallery/index.html).
