@@ -26,6 +26,9 @@ O mapa de países usa o `countries.csv` da pasta do projeto, obtido de
 com nomes ajustados à StatsBomb (por exemplo, `England` no lugar de
 `United Kingdom`). O mapa só aparece depois do upload desse arquivo.
 
+Depois de fazer upload, use como exemplo em Filtros: "Campeonato: UEFA Euro" e "Temporada: 2020".
+Este é um bom exemplo de distribuição das partidas pela Europa neste campeonato.
+
 ```
 DR1_AT/
   app.py
